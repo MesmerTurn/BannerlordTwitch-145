@@ -1,0 +1,8 @@
+obj/
+bin/
+build/
+deploy/
+*.user
+.vs/
+packages/
+*.suo
