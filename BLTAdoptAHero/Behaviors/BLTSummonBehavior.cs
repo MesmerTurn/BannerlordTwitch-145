@@ -113,8 +113,7 @@ namespace BLTAdoptAHero
                                        withRetinue: true);
 
                 // First spawn, so spawn retinue also (never in naval — ships have limited spawn space)
-                if (heroSummonState.TimesSummoned == 0 && heroSummonState.SpawnWithRetinue && RetinueAllowed()
-                    && !MissionHelpers.InNavalMission())
+                if (heroSummonState.TimesSummoned == 0 && heroSummonState.SpawnWithRetinue && RetinueAllowed())
                 {
                     var formationClass = agent.Formation.FormationIndex;
                     SpawnRetinue(adoptedHero, ShouldBeMounted(formationClass), formationClass,
@@ -393,14 +392,22 @@ namespace BLTAdoptAHero
         public static Agent SpawnAgent(bool onPlayerSide, CharacterObject troop, PartyBase party, bool spawnWithHorse, bool isReinforcement = false, bool isAlarmed = true)
         {
             // In naval battles formations are empty — spawn without formation next to a valid agent
-            bool naval = MissionHelpers.InNavalMission();
+            bool naval = !MissionHelpers.InSiegeMission() && !MissionHelpers.InFieldBattleMission();
             TaleWorlds.Library.Vec3? spawnPos = null;
             TaleWorlds.Library.Vec2? spawnDir = null;
             if (naval)
             {
-                Agent anchor = onPlayerSide
-                    ? Agent.Main
-                    : Mission.Current.Agents.FirstOrDefault(a => a.IsActive() && a.IsEnemyOf(Agent.Main));
+                Agent anchor;
+                if (onPlayerSide)
+                {
+                    anchor = Agent.Main?.IsActive() == true
+                        ? Agent.Main
+                        : Mission.Current.Agents.FirstOrDefault(a => a.IsActive() && a.IsEnemyOf(Agent.Main) == false && a != Agent.Main);
+                }
+                else
+                {
+                    anchor = Mission.Current.Agents.FirstOrDefault(a => a.IsActive() && a.IsEnemyOf(Agent.Main));
+                }
                 if (anchor == null) return null;
                 spawnPos = anchor.Position;
                 spawnDir = anchor.GetMovementDirection();
@@ -437,8 +444,7 @@ namespace BLTAdoptAHero
         public static bool ShouldBeMounted(FormationClass formationClass)
         {
             return Mission.Current.Mode != MissionMode.Stealth
-                   && !MissionHelpers.InSiegeMission()
-                   && !MissionHelpers.InNavalMission()
+                   && MissionHelpers.InFieldBattleMission()
                    && formationClass is
                        FormationClass.Cavalry or
                        FormationClass.LightCavalry or
@@ -449,3 +455,5 @@ namespace BLTAdoptAHero
         public static bool RetinueAllowed() => MissionHelpers.InSiegeMission() || MissionHelpers.InFieldBattleMission();
     }
 }
+
+

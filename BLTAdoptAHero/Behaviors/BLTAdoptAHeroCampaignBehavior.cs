@@ -60,6 +60,8 @@ namespace BLTAdoptAHero
             public bool IsRetiredOrDead { get; set; }
             public bool IsCreatedHero { get; set; } = false;
             public string LegacyName { get; set; } = null;
+            public int PrestigeLevel { get; set; } = 0;
+            public int PrestigeKillCount { get; set; } = 0;
 
             //public bool MesssageFlag { get; set; } = false;
             //public string MessageContent { get; set; } = null;
@@ -833,6 +835,24 @@ namespace BLTAdoptAHero
         #region Equipment
         public int GetEquipmentTier(Hero hero) => GetHeroData(hero).EquipmentTier;
         public void SetEquipmentTier(Hero hero, int tier) => GetHeroData(hero).EquipmentTier = tier;
+
+        #region Prestige
+        public int GetPrestigeLevel(Hero hero) => GetHeroData(hero).PrestigeLevel;
+        public int GetPrestigeKillCount(Hero hero) => GetHeroData(hero).PrestigeKillCount;
+        public void IncrementPrestigeKill(Hero hero) => GetHeroData(hero).PrestigeKillCount++;
+
+        public bool DoPrestige(Hero hero)
+        {
+            var hd = GetHeroData(hero);
+            if (hd.PrestigeLevel >= BLTAdoptAHeroModule.CommonConfig.PrestigeConfig.MaxPrestigeLevel)
+                return false;
+            hd.PrestigeLevel++;
+            hd.PrestigeKillCount = 0;
+            // Reset equipment to T1
+            hd.EquipmentTier = -1;
+            return true;
+        }
+        #endregion
         public HeroClassDef GetEquipmentClass(Hero hero)
             => BLTAdoptAHeroModule.HeroClassConfig.GetClass(GetHeroData(hero).EquipmentClassID);
         public void SetEquipmentClass(Hero hero, HeroClassDef classDef)
@@ -1814,6 +1834,7 @@ namespace BLTAdoptAHero
         public static string GetFullName(string name)
         {
             string tag = TwitchDevUsers.Developers.Contains(name)
+                         && BLTAdoptAHeroModule.CommonConfig?.ShowDevPrefix == true
                 ? BLTAdoptAHeroModule.DevTag
                 : BLTAdoptAHeroModule.Tag;
 

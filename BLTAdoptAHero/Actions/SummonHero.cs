@@ -305,7 +305,7 @@ namespace BLTAdoptAHero
                || MissionHelpers.InFieldBattleMission() && !settings.AllowFieldBattle
                || MissionHelpers.InVillageEncounter() && !settings.AllowVillageBattle
                || MissionHelpers.InSiegeMission() && !settings.AllowSiegeBattle
-               || MissionHelpers.InNavalMission() && (!settings.AllowNavalBattle || Agent.Main == null)
+               || false && (!settings.AllowNavalBattle || Agent.Main == null)
                || MissionHelpers.InFriendlyMission() && !settings.AllowFriendlyMission
                || MissionHelpers.InHideOutMission() && (!settings.AllowHideOut || !settings.OnPlayerSide)
                || MissionHelpers.InTrainingFieldMission()
@@ -786,3 +786,5 @@ namespace BLTAdoptAHero
         public override string ToString() => Text.ToString();
     }
 }
+
+

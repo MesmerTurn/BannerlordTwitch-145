@@ -58,6 +58,16 @@ namespace BLTAdoptAHero
              PropertyOrder(6), UsedImplicitly]
             public int CostTier6 { get; set; } = 400000;
 
+            [LocDisplayName("Cost Tier 7 (Elite)"),
+             LocDescription("Gold cost for Tier 7 equipment — T6 items with 1.5x stat modifiers."),
+             PropertyOrder(7), UsedImplicitly]
+            public int CostTier7 { get; set; } = 600000;
+
+            [LocDisplayName("Cost Tier 8 (Legendary)"),
+             LocDescription("Gold cost for Tier 8 — T6 elite items plus double hero HP in battle."),
+             PropertyOrder(8), UsedImplicitly]
+            public int CostTier8 { get; set; } = 900000;
+
             public int GetTierCost(int tier)
             {
                 return tier switch
@@ -68,7 +78,9 @@ namespace BLTAdoptAHero
                     3 => CostTier4,
                     4 => CostTier5,
                     5 => CostTier6,
-                    _ => CostTier6
+                    6 => CostTier7,
+                    7 => CostTier8,
+                    _ => CostTier8
                 };
             }
 
@@ -151,7 +163,7 @@ namespace BLTAdoptAHero
             int targetTier = Math.Max(0, BLTAdoptAHeroCampaignBehavior.Current.GetEquipmentTier(adoptedHero) +
                              (settings.ReequipInsteadOfUpgrade ? 0 : 1));
 
-            if (targetTier > 5)
+            if (targetTier > 7)
             {
                 onFailure("{=FZh7ZtGp}You cannot upgrade any further!".Translate());
                 return;
@@ -260,14 +272,16 @@ namespace BLTAdoptAHero
 
             // These functions select new equipment, preferring to use the availableItems list above, then
             // falling back to the full item list
-            EquipmentElement FindNewEquipment(Func<ItemObject, bool> filter = null, FindFlags flags = FindFlags.None)
+            EquipmentElement FindNewEquipment(Func<ItemObject, bool> filter = null, FindFlags flags = FindFlags.None, bool? overrideMounted = null)
             {
                 var oldEquipment = availableItems.FirstOrDefault(i => filter?.Invoke(i.Item) != false);
                 if (!oldEquipment.IsEmpty)
                     return oldEquipment;
 
+                bool mounted = overrideMounted ?? classDef?.Mounted == true;
+
                 // Try first without allowing duplicates
-                var foundItem = FindRandomTieredEquipment(targetTier, adoptedHero, classDef?.Mounted == true, flags,
+                var foundItem = FindRandomTieredEquipment(targetTier, adoptedHero, mounted, flags,
                     o => filter?.Invoke(o) != false
                         && !restrictedItemIds.Contains(o.StringId ?? "")
                         && !currentlyEquippedItemIds.Contains(o.StringId ?? ""),
@@ -276,7 +290,7 @@ namespace BLTAdoptAHero
                 // Try again but with lower tier
                 if (foundItem == null)
                 {
-                    foundItem = FindRandomTieredEquipment(targetTier-1, adoptedHero, classDef?.Mounted == true, flags,
+                    foundItem = FindRandomTieredEquipment(targetTier-1, adoptedHero, mounted, flags,
                     o => filter?.Invoke(o) != false
                         && !restrictedItemIds.Contains(o.StringId ?? "")
                         && !currentlyEquippedItemIds.Contains(o.StringId ?? ""),
@@ -286,7 +300,7 @@ namespace BLTAdoptAHero
                 // If nothing found and we had duplicate restrictions, try again allowing duplicates
                 if (foundItem == null && currentlyEquippedItemIds.Any())
                 {
-                    foundItem = FindRandomTieredEquipment(targetTier, adoptedHero, classDef?.Mounted == true, flags,
+                    foundItem = FindRandomTieredEquipment(targetTier, adoptedHero, mounted, flags,
                         o => filter?.Invoke(o) != false
                             && !restrictedItemIds.Contains(o.StringId ?? ""),
                         cultureFilter, cultureFilterSpecified);
@@ -295,7 +309,7 @@ namespace BLTAdoptAHero
                 // Try one last time without culture filter
                 if (foundItem == null && cultureFilterSpecified == true)
                 {
-                    foundItem = FindRandomTieredEquipment(targetTier, adoptedHero, classDef?.Mounted == true, flags,
+                    foundItem = FindRandomTieredEquipment(targetTier, adoptedHero, mounted, flags,
                         o => filter?.Invoke(o) != false
                             && !restrictedItemIds.Contains(o.StringId ?? ""),
                         cultureFilter, false);
@@ -324,8 +338,14 @@ namespace BLTAdoptAHero
                 foreach (var (equipmentType, slot) in classDef.SlotItems
                             .Zip(adoptedHero.BattleEquipment.YieldWeaponSlots(), (equipmentType, slot) => (equipmentType, slot)))
                 {
+                    // Glaives often have RequiresNoMount flag — ignore mounted restriction so glaive is always picked over lance
+                    bool? mountedOverride = equipmentType is EquipmentType.OneHandedGlaive or EquipmentType.TwoHandedGlaive
+                        ? false
+                        : null;
+
                     var weapon = FindNewEquipment(e => e.IsEquipmentType(equipmentType),
-                        equipmentType == EquipmentType.Stone ? FindFlags.AllowNonMerchandise : FindFlags.None);
+                        equipmentType == EquipmentType.Stone ? FindFlags.AllowNonMerchandise : FindFlags.None,
+                        overrideMounted: mountedOverride);
                     if (!weapon.IsEmpty)
                     {
                         adoptedHero.BattleEquipment[slot.index] = weapon;
@@ -439,11 +459,42 @@ namespace BLTAdoptAHero
                 }
             }
 
+            // T7/T8: apply best item-type-specific elite modifier to all equipped items
+            if (targetTier >= 6)
+            {
+                foreach (var slot in adoptedHero.BattleEquipment.YieldFilledEquipmentSlots().ToList())
+                {
+                    var modifier = GetEliteModifierForItem(slot.element.Item);
+                    if (modifier != null)
+                        adoptedHero.BattleEquipment[slot.index] = new EquipmentElement(slot.element.Item, modifier);
+                }
+            }
+
+            // RoT 8.0: assign dragon or chariot by item StringId based on tier
+            if (classDef?.UseDragon == true)
+            {
+                var id = GetDragonId(targetTier);
+                var item = CampaignHelpers.AllItems.FirstOrDefault(i => i.StringId == id);
+                if (item != null)
+                    adoptedHero.BattleEquipment[EquipmentIndex.Horse] = new EquipmentElement(item);
+            }
+            else if (classDef?.UseChariot == true)
+            {
+                var id = GetChariotId(targetTier);
+                var item = CampaignHelpers.AllItems.FirstOrDefault(i => i.StringId == id);
+                if (item != null)
+                    adoptedHero.BattleEquipment[EquipmentIndex.Horse] = new EquipmentElement(item);
+            }
+
             UpgradeCivilian(adoptedHero, targetTier, replaceSameTier, cultureFilter, cultureFilterSpecified, restrictedItemIds);
         }
 
         public static bool HeroShouldUseHorse(Hero adoptedHero, HeroClassDef classDef)
         {
+            // Dragon and chariot are assigned separately, skip standard horse logic for them
+            if (classDef?.UseDragon == true || classDef?.UseChariot == true)
+                return false;
+
             var heroWeapons = adoptedHero.BattleEquipment.YieldFilledWeaponSlots().Select(e => e.element.Item).ToList();
             return classDef is { Mounted: true }
                    || classDef == null
@@ -526,6 +577,83 @@ namespace BLTAdoptAHero
             hog,
             sheep,
             hare,
+        }
+
+        // RoT 8.0 dragon/chariot item IDs, indexed by tier within group (tier % 3)
+        private static readonly string[] DragonGroundIds  = { "dragon_black",  "dragon_brown",  "dragon_gold"  };
+        private static readonly string[] DragonFlyingIds  = { "dragon_black2", "dragon_brown2", "dragon_gold2" };
+        private static readonly string[] ChariotBasicIds  = { "chariot1", "chariot2", "chariot3" };
+        private static readonly string[] ChariotAdvancedIds = { "chariot4", "chariot5", "chariot6" };
+
+
+        // Returns the best modifier for a given item type (armor, weapon, mount, harness)
+        public static ItemModifier GetEliteModifierForItem(ItemObject item)
+        {
+            if (item == null) return null;
+            var all = Game.Current?.ObjectManager?.GetObjectTypeList<ItemModifier>();
+            if (all == null) return null;
+
+            switch (item.Type)
+            {
+                case ItemObject.ItemTypeEnum.HeadArmor:
+                case ItemObject.ItemTypeEnum.BodyArmor:
+                case ItemObject.ItemTypeEnum.LegArmor:
+                case ItemObject.ItemTypeEnum.HandArmor:
+                case ItemObject.ItemTypeEnum.Cape:
+                    return all.Where(m => m.Armor > 0)
+                              .OrderByDescending(m => m.Armor)
+                              .FirstOrDefault();
+
+                case ItemObject.ItemTypeEnum.OneHandedWeapon:
+                case ItemObject.ItemTypeEnum.TwoHandedWeapon:
+                case ItemObject.ItemTypeEnum.Polearm:
+                    return all.Where(m => m.Damage > 0)
+                              .OrderByDescending(m => m.Damage)
+                              .FirstOrDefault();
+
+                case ItemObject.ItemTypeEnum.Bow:
+                case ItemObject.ItemTypeEnum.Crossbow:
+                    return all.Where(m => m.Speed > 0)
+                              .OrderByDescending(m => m.Speed)
+                              .FirstOrDefault();
+
+                case ItemObject.ItemTypeEnum.Arrows:
+                case ItemObject.ItemTypeEnum.Bolts:
+                case ItemObject.ItemTypeEnum.Thrown:
+                    return all.Where(m => m.Damage > 0)
+                              .OrderByDescending(m => m.Damage)
+                              .FirstOrDefault();
+
+                case ItemObject.ItemTypeEnum.Shield:
+                    return all.Where(m => m.HitPoints > 0)
+                              .OrderByDescending(m => m.HitPoints)
+                              .FirstOrDefault();
+
+                case ItemObject.ItemTypeEnum.Horse:
+                    return all.Where(m => m.MountSpeed > 0 || m.Maneuver > 0)
+                              .OrderByDescending(m => m.MountSpeed + m.Maneuver)
+                              .FirstOrDefault();
+
+                case ItemObject.ItemTypeEnum.HorseHarness:
+                    return all.Where(m => m.Armor > 0)
+                              .OrderByDescending(m => m.Armor)
+                              .FirstOrDefault();
+
+                default:
+                    return null;
+            }
+        }
+
+        public static string GetDragonId(int tier)
+        {
+            int idx = tier % 3;
+            return tier < 3 ? DragonGroundIds[idx] : DragonFlyingIds[idx];
+        }
+
+        public static string GetChariotId(int tier)
+        {
+            int idx = tier % 3;
+            return tier < 3 ? ChariotBasicIds[idx] : ChariotAdvancedIds[idx];
         }
 
         [Flags]

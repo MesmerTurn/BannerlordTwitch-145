@@ -220,6 +220,7 @@ namespace BannerlordTwitch
 
         public override void OnMissionBehaviorInitialize(Mission mission)
         {
+            if (mission.PlayerTeam == null) return;
             mission.AddMissionBehavior(new BLTAgentModifierBehavior());
             mission.AddMissionBehavior(new BLTAgentPfxBehaviour());
         }

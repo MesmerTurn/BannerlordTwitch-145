@@ -79,14 +79,24 @@ namespace BLTAdoptAHero
          PropertyOrder(8), UsedImplicitly]
         public bool UseCamel { get; set; }
 
+        [LocDisplayName("Use Dragon (RoT)"),
+         LocDescription("Use a dragon mount from Realm of Thrones. T1-T3: ground dragon, T4-T6: flying dragon. Requires RoT 8.0."),
+         PropertyOrder(9), UsedImplicitly]
+        public bool UseDragon { get; set; }
+
+        [LocDisplayName("Use Chariot (RoT)"),
+         LocDescription("Use a chariot mount from Realm of Thrones. T1-T3: basic chariot, T4-T6: advanced chariot. Requires RoT 8.0."),
+         PropertyOrder(10), UsedImplicitly]
+        public bool UseChariot { get; set; }
+
         [LocDisplayName("{=MvddFKo4}Passive Power"),
          LocDescription("{=F8a2nXYo}Passive hero power: this will always apply to the hero (i.e. a permanent buff)"),
-         PropertyOrder(9), ExpandableObject, Expand, UsedImplicitly]
+         PropertyOrder(11), ExpandableObject, Expand, UsedImplicitly]
         public PassivePowerGroup PassivePower { get; set; } = new() { Name = "{=MvddFKo4}Passive Power" };
 
         [LocDisplayName("{=wdCMNOGd}Active Power"),
          LocDescription("{=I4ASwveG}Active hero power: this power will be triggered only when the UseHeroPower action is used by the viewer, via reward or command (i.e. a temporary buff)"),
-         PropertyOrder(10), ExpandableObject, Expand, UsedImplicitly]
+         PropertyOrder(12), ExpandableObject, Expand, UsedImplicitly]
         public ActivePowerGroup ActivePower { get; set; } = new() { Name = "{=wdCMNOGd}Active Power" };
         #endregion
 
@@ -118,9 +128,17 @@ namespace BLTAdoptAHero
         // For UI
         [YamlIgnore, Browsable(false)]
         public string MountDescription
-            => (UseHorse ? "{=YzIcRgBV}Horse".Translate() : "") +
-               (UseHorse && UseCamel ? "/" : "") +
-               (UseCamel ? "{=HMclWXR8}Camel".Translate() : "");
+        {
+            get
+            {
+                var parts = new System.Collections.Generic.List<string>();
+                if (UseHorse) parts.Add("{=YzIcRgBV}Horse".Translate());
+                if (UseCamel) parts.Add("{=HMclWXR8}Camel".Translate());
+                if (UseDragon) parts.Add("Dragon (RoT)");
+                if (UseChariot) parts.Add("Chariot (RoT)");
+                return string.Join("/", parts);
+            }
+        }
 
         [YamlIgnore, Browsable(false)]
         public IEnumerable<EquipmentType> Weapons
@@ -131,7 +149,7 @@ namespace BLTAdoptAHero
             => IndexedSlots.Where(s => s.type is not (EquipmentType.None or EquipmentType.Shield));
 
         [YamlIgnore, Browsable(false)]
-        public bool Mounted => UseHorse || UseCamel;
+        public bool Mounted => UseHorse || UseCamel || UseDragon || UseChariot;
 
         [YamlIgnore, Browsable(false)]
         public IEnumerable<SkillObject> WeaponSkills =>
@@ -163,7 +181,9 @@ namespace BLTAdoptAHero
         public override string ToString() =>
             $"{Name} : {string.Join(", ", SlotItems.Select(s => s.ToString()))}"
             + (UseHorse ? " (" + "{=A1G6bq0G}Use Horse".Translate() + ")" : "")
-            + (UseCamel ? " (" + "{=FpgyZk0F}Use Camel".Translate() + ")" : "");
+            + (UseCamel ? " (" + "{=FpgyZk0F}Use Camel".Translate() + ")" : "")
+            + (UseDragon ? " (Dragon RoT)" : "")
+            + (UseChariot ? " (Chariot RoT)" : "");
 
         #endregion
 

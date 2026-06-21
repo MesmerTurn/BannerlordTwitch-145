@@ -40,7 +40,8 @@ namespace BLTAdoptAHero
         public static readonly HashSet<string> Developers = new HashSet<string>
         {
             "randomchair22",
-            "kanboru201"
+            "kanboru201",
+            "siemanko_smialy"
         };
     }
 

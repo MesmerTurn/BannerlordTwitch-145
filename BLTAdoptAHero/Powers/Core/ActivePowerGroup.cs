@@ -31,7 +31,7 @@ namespace BLTAdoptAHero.Powers
     }
 
     [LocDisplayName("{=HvTIrx0b}Active Power Group")]
-    public class ActivePowerGroup : IDocumentable, ICloneable
+    public class ActivePowerGroup : IDocumentable, ICloneable, ILoaded
     {
         #region User Editable
         [LocDisplayName("{=uUzmy7Lh}Name"),
@@ -144,6 +144,13 @@ namespace BLTAdoptAHero.Powers
             clone.Powers = new(CloneHelpers.CloneCollection(Powers));
             clone.PowerConfig = PowerConfig;
             return clone;
+        }
+        #endregion
+
+        #region ILoaded
+        public void OnLoaded(BannerlordTwitch.Settings settings)
+        {
+            PowerConfig = GlobalHeroPowerConfig.Get(settings);
         }
         #endregion
 

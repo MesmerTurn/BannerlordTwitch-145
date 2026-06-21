@@ -36,16 +36,16 @@ namespace BLTAdoptAHero.Powers
             {
                 deactivationHandler.OnDeactivate += _ =>
                 {
-                    BLTAgentModifierBehavior.Current.Remove(agent, Modifiers);
-                    BLTAgentStatCalculateModel.Current.RemoveModifiers(hero, Modifiers.Skills);
+                    BLTAgentModifierBehavior.Current?.Remove(agent, Modifiers);
+                    BLTAgentStatCalculateModel.Current?.RemoveModifiers(hero, Modifiers.Skills);
                 };
             }
         }
 
         private void Activate(Hero hero, Agent agent)
         {
-            BLTAgentModifierBehavior.Current.Add(agent, Modifiers);
-            BLTAgentStatCalculateModel.Current.AddModifiers(hero, Modifiers.Skills);
+            BLTAgentModifierBehavior.Current?.Add(agent, Modifiers);
+            BLTAgentStatCalculateModel.Current?.AddModifiers(hero, Modifiers.Skills);
         }
 
         #endregion

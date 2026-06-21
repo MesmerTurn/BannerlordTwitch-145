@@ -308,6 +308,13 @@
     <Compile Include="Achievements\IAchievementRequirement.cs" />
     <Compile Include="Achievements\StatisticClassSpecificRequirement.cs" />
     <Compile Include="Achievements\StatisticTotalRequirement.cs" />
+    <Compile Include="MakeBltGreatAgain.cs" />
+    <Compile Include="Actions\Prestige.cs" />
+    <Compile Include="Patches\PrestigeStatPatches.cs" />
+    <Compile Include="Patches\BLTModuleMissionPatch.cs" />
+    <Compile Include="Patches\CraftingOrderPatch.cs" />
+    <Compile Include="Prestige\PrestigeLevelDef.cs" />
+    <Compile Include="Prestige\PrestigeSettings.cs" />
     <Compile Include="Actions\AddGoldToHero.cs" />
     <Compile Include="Actions\CampaignInfo.cs" />
     <Compile Include="Actions\BattleInfo.cs" />

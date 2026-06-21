@@ -9,6 +9,11 @@ namespace BLTAdoptAHero
     {
         protected override void ExecuteInternal(ReplyContext context, object config, Action<string> onSuccess, Action<string> onFailure)
         {
+            if (BLTAdoptAHeroCampaignBehavior.Current == null)
+            {
+                onFailure("BLT not ready, try again in a moment");
+                return;
+            }
             var adoptedHero = BLTAdoptAHeroCampaignBehavior.Current.GetAdoptedHero(context.UserName);
             if (adoptedHero == null)
             {

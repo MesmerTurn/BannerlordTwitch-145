@@ -14,6 +14,7 @@ using BannerlordTwitch.Helpers;
 using BLTAdoptAHero.Achievements;
 using BLTAdoptAHero.Actions.Util;
 using BLTAdoptAHero.Actions.Upgrades;
+using BLTAdoptAHero.Prestige;
 using BLTAdoptAHero.UI;
 using TaleWorlds.Library;
 using TaleWorlds.TwoDimension;
@@ -75,6 +76,12 @@ namespace BLTAdoptAHero
          LocDescription("{=RstrItmDesc}Comma-separated list of ItemObject StringIds to exclude from equipment selection in equip, smith, and rewards (e.g., 'battanian_noble_sword,empire_spear_1')"),
          PropertyOrder(4), UsedImplicitly]
         public string RestrictedItems { get; set; } = "";
+
+        [LocDisplayName("{=}Show [DEV] Prefix"),
+         LocCategory("General", "{=C5T5nnix}General"),
+         LocDescription("{=}Whether to show [DEV] prefix instead of [BLT] for users listed in the developers list (randomchair22, kanboru201, siemanko_smialy). Disable if you don't want [DEV] appearing on stream."),
+         PropertyOrder(5), UsedImplicitly]
+        public bool ShowDevPrefix { get; set; } = true;
 
         [LocDisplayName("{=}Custom Companion Limit"),
          LocCategory("General", "{=C5T6nnix}General"),
@@ -607,6 +614,14 @@ namespace BLTAdoptAHero
          Range(0, 1), Editor(typeof(SliderFloatEditor), typeof(SliderFloatEditor)),
          Document, UsedImplicitly]
         public float MinimumGoldPerKill { get; set; } = 0.5f;
+        #endregion
+
+        #region Prestige
+        [LocDisplayName("Prestige System"),
+         LocCategory("Prestige", "Prestige"),
+         LocDescription("Settings for the !prestige command. Heroes who reach T8 can prestige for cumulative kill gold/XP bonuses."),
+         PropertyOrder(1), ExpandableObject, Expand, UsedImplicitly]
+        public PrestigeSettings PrestigeConfig { get; set; } = new();
         #endregion
 
         #region Battle End Rewards

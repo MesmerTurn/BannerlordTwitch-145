@@ -1,4 +1,4 @@
-﻿<Prefab>
+<Prefab>
   <Window>
     <Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
       <Children>
@@ -6,7 +6,7 @@
         <Widget DataSource="{Heroes}" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
           <ItemTemplate>
             <!-- Each hero entry -->
-            <Widget DataSource="{.}" 
+            <Widget DataSource="{.}"
                     IsVisible="@IsVisible"
 					WidthSizePolicy="Fixed"
 					HeightSizePolicy="Fixed"
